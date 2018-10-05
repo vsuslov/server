@@ -42,6 +42,12 @@ Full Text Search interface
 
 #include "ha_prototypes.h"
 
+#ifdef WITH_WSREP
+#include <log.h>
+#include <wsrep_mysqld.h>
+#include <wsrep.h>
+#endif
+
 #define FTS_MAX_ID_LEN	32
 
 /** Column name from the FTS config table */
@@ -7041,7 +7047,29 @@ fts_check_and_drop_orphaned_tables(
 		/* If the aux table is in decimal format, we should
 		rename it, so push it to aux_tables_to_rename */
 		if (!drop && rename) {
-			ib_vector_push(aux_tables_to_rename, aux_table);
+			/* It is necessary to check that the table with
+                       this name is missing in the vector - otherwise it
+                       can be renamed twice: */
+                       bool    rename_table = true;
+                       for (ulint count = 0;
+                            count < ib_vector_size(aux_tables_to_rename);
+                            count++) {
+                               fts_aux_table_t*        rename_aux =
+                                       static_cast<fts_aux_table_t*>(
+                                       ib_vector_get(aux_tables_to_rename,
+                                                     count));
+                                       if (strcmp(rename_aux->name,
+                                                  aux_table->name) == 0) {
+                                               rename_table = false;
+#ifdef WITH_WSREP
+					       WSREP_DEBUG("JAN: Not renamed list %s rename_table %s", rename_aux->name, aux_table->name);
+#endif
+                                               break;
+                                       }
+                       }
+                       if (rename_table) {
+			       ib_vector_push(aux_tables_to_rename, aux_table);
+		       }
 		}
 
 		if (i + 1 < ib_vector_size(tables)) {
