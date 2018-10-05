@@ -6665,7 +6665,6 @@ fts_rename_aux_tables_to_hex_format(
 			"All the fts index associated with the table are "
 			"marked as corrupted. Please rebuild the "
 			"index again.", parent_table->name);
-		fts_sql_rollback(trx_rename);
 
 		/* Corrupting the fts index related to parent table. */
 		trx_t*	trx_corrupt;
