@@ -2768,7 +2768,7 @@ retry:
 	mutex_enter(&cache->doc_id_lock);
 	/* For each sync operation, we will add next_doc_id by 1,
 	so to mark a sync operation */
-	if (cache->next_doc_id < cache->synced_doc_id + 1) {
+	if (cache->next_doc_id <= cache->synced_doc_id) {
 		cache->next_doc_id = cache->synced_doc_id + 1;
 	}
 	mutex_exit(&cache->doc_id_lock);
