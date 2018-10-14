@@ -575,7 +575,7 @@ DROP TABLE t1, t2, t3;
 # end up with 4 rows: two left-over from when the table was MyISAM, and two
 # left-over from the InnoDB part.
 --echo Check that no more than the expected last four GTIDs are in mysql.gtid_slave_pos
-select count(4) <= 4 from mysql.gtid_slave_pos order by domain_id, sub_id;
+select * from mysql.gtid_slave_pos order by domain_id, sub_id;
 
 --connection server_1
 --source include/rpl_end.inc
