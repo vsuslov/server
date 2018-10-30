@@ -2120,8 +2120,15 @@ retry_share:
         DBUG_RETURN(TRUE);
       }
 
-      protection_request.init(MDL_key::BACKUP, "", "", MDL_BACKUP_STMT,
-                              MDL_STATEMENT);
+      if (table->s->table_category != TABLE_CATEGORY_USER)
+        protection_request.init(MDL_key::BACKUP, "", "", MDL_BACKUP_SYS_DML,
+                                MDL_STATEMENT);
+      else if (table->file->has_transactions())
+        protection_request.init(MDL_key::BACKUP, "", "", MDL_BACKUP_TRANS_DML,
+                                MDL_STATEMENT);
+      else
+        protection_request.init(MDL_key::BACKUP, "", "", MDL_BACKUP_DML,
+                                MDL_STATEMENT);
 
       /*
         Install error handler which if possible will convert deadlock error
