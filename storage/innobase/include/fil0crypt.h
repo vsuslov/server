@@ -180,6 +180,10 @@ struct fil_space_crypt_t : st_encryption_scheme
 		return (encryption == FIL_ENCRYPTION_OFF);
 	}
 
+	bool is_create_encrypted() const {
+		return encryption == FIL_ENCRYPTION_ON;
+	}
+
 	/** Write crypt data to a page (0)
 	@param[in]	space	tablespace
 	@param[in,out]	page0	first page of the tablespace

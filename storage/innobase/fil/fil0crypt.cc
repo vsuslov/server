@@ -438,11 +438,44 @@ fil_space_set_crypt_data(
 	if (space->crypt_data != NULL) {
 		/* There is already crypt data present,
 		merge new crypt_data */
+
+		mutex_enter(&fil_system->mutex);
+
+		if (space->crypt_data->min_key_version == 0
+		    && crypt_data->min_key_version > 0) {
+
+			UT_LIST_REMOVE(fil_system->unencrypted_spaces,
+				       space);
+
+			UT_LIST_ADD_LAST(fil_system->encrypted_spaces,
+					 space);
+
+			if (crypt_data->is_create_encrypted()) {
+				fil_system->inc_create_encrypted();
+			}
+
+		}
+
+		mutex_exit(&fil_system->mutex);
+
 		fil_space_merge_crypt_data(space->crypt_data,
 						   crypt_data);
 		ret_crypt_data = space->crypt_data;
 		free_crypt_data = crypt_data;
 	} else {
+
+		mutex_enter(&fil_system->mutex);
+		if (crypt_data->min_key_version > 0) {
+
+			UT_LIST_REMOVE(fil_system->unencrypted_spaces, space);
+			UT_LIST_ADD_LAST(fil_system->encrypted_spaces, space);
+
+			if (crypt_data->is_create_encrypted()) {
+				fil_system->inc_create_encrypted();
+			}
+		}
+
+		mutex_exit(&fil_system->mutex);
 		space->crypt_data = crypt_data;
 		ret_crypt_data = space->crypt_data;
 	}
@@ -961,6 +994,12 @@ fil_crypt_read_crypt_data(fil_space_t* space)
 		if (!space->crypt_data) {
 			space->crypt_data = fil_space_read_crypt_data(
 				page_size, block->frame);
+
+			if (space->crypt_data != NULL
+			    && space->crypt_data->min_key_version > 0) {
+				UT_LIST_ADD_LAST(fil_system->encrypted_spaces,
+						 space);
+			}
 		}
 		mutex_exit(&fil_system->mutex);
 	}
@@ -1468,11 +1507,7 @@ fil_crypt_find_space_to_rotate(
 	/* If key rotation is enabled (default) we iterate all tablespaces.
 	If key rotation is not enabled we iterate only the tablespaces
 	added to keyrotation list. */
-	if (srv_fil_crypt_rotate_key_age) {
-		state->space = fil_space_next(state->space);
-	} else {
-		state->space = fil_space_keyrotate_next(state->space);
-	}
+	state->space = fil_space_next(state->space);
 
 	while (!state->should_shutdown() && state->space) {
 		/* If there is no crypt data and we have not yet read
@@ -1490,11 +1525,7 @@ fil_crypt_find_space_to_rotate(
 			return true;
 		}
 
-		if (srv_fil_crypt_rotate_key_age) {
-			state->space = fil_space_next(state->space);
-		} else {
-			state->space = fil_space_keyrotate_next(state->space);
-		}
+		state->space = fil_space_next(state->space);
 	}
 
 	/* if we didn't find any space return iops */
@@ -2083,6 +2114,35 @@ fil_crypt_complete_rotate_space(
 		if (should_flush) {
 			/* we're the last active thread */
 			crypt_data->rotate_state.flushing = true;
+
+			mutex_enter(&fil_system->mutex);
+
+			if (crypt_data->min_key_version == 0
+			    && crypt_data->rotate_state.min_key_version_found > 0) {
+
+				UT_LIST_REMOVE(
+					fil_system->unencrypted_spaces,
+					state->space);
+
+				UT_LIST_ADD_LAST(
+					fil_system->encrypted_spaces,
+					state->space);
+			}
+
+			if (crypt_data->min_key_version > 0
+			    && crypt_data->rotate_state.min_key_version_found == 0) {
+
+				UT_LIST_REMOVE(
+					fil_system->encrypted_spaces,
+					state->space);
+
+				UT_LIST_ADD_LAST(
+					fil_system->unencrypted_spaces,
+					state->space);
+			}
+
+			mutex_exit(&fil_system->mutex);
+
 			crypt_data->min_key_version =
 				crypt_data->rotate_state.min_key_version_found;
 		}
