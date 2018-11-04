@@ -346,7 +346,7 @@ rpl_slave_state::update(uint32 domain_id, uint32 server_id, uint64 sub_id,
     last_sub_id= sub_id;
 
   ++pending_gtid_count;
-  if (pending_gtid_count >= /* ToDo: sysvar */1)
+  if (pending_gtid_count >= opt_gtid_cleanup_batch_size)
   {
     pending_gtid_count = 0;
     slave_background_gtid_pending_delete_request();
