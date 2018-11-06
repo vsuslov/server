@@ -3082,8 +3082,8 @@ static int mysql_create_routine(THD *thd, LEX *lex)
   }
 #ifdef WITH_WSREP
 wsrep_error_label:
-  return true;
 #endif
+  return true;
 }
 
 
