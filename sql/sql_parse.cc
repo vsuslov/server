@@ -109,6 +109,7 @@
 #include "../storage/maria/ha_maria.h"
 #endif
 
+#include "wsrep.h"
 #include "wsrep_mysqld.h"
 #include "wsrep_thd.h"
 
@@ -3080,9 +3081,9 @@ static int mysql_create_routine(THD *thd, LEX *lex)
     return false;
   }
 #ifdef WITH_WSREP
-error: /* Used by WSREP_TO_ISOLATION_BEGIN */
-#endif
+wsrep_error_label:
   return true;
+#endif
 }
 
 
@@ -6301,7 +6302,10 @@ end_with_restore_list:
   goto finish;
 
 error:
-  res= TRUE;
+#ifdef WITH_WSREP
+wsrep_error_label:
+#endif
+  res= true;
 
 finish:
 
