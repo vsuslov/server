@@ -1,4 +1,4 @@
-/* Copyright (C) 2008-2017 Kentoku Shiba & 2017 MariaDB corp
+/* Copyright (C) 2008-2018 Kentoku Shiba & 2017 MariaDB corp
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -36,5 +36,13 @@
 #define HA_EXTRA_HAS_STARTING_ORDERED_INDEX_SCAN
 #define HANDLER_HAS_NEED_INFO_FOR_AUTO_INC
 #define HANDLER_HAS_CAN_USE_FOR_AUTO_INC_INIT
+#endif
+
+#if defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >=	100300
+#define SPIDER_UPDATE_ROW_HAS_CONST_NEW_DATA
+#endif
+
+#if defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >=	100309
+#define SPIDER_MDEV_16246
 #endif
 #endif /* SPD_ENVIRON_INCLUDED */
