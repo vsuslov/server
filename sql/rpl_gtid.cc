@@ -850,7 +850,6 @@ rpl_slave_state::gtid_delete_pending(THD *thd,
   int err= 0;
   ulonglong thd_saved_option;
 
-fprintf(stderr, "Hulu1: gtid_delete_pending(%p)\n", *list_ptr);
   if (unlikely(!loaded))
     return;
 
@@ -914,7 +913,7 @@ fprintf(stderr, "Hulu1: gtid_delete_pending(%p)\n", *list_ptr);
     bitmap_set_bit(table->read_set, table->field[0]->field_index);
     bitmap_set_bit(table->read_set, table->field[1]->field_index);
 
-    if (!direct_pos &&(err= table->file->ha_index_init(0, 0)))
+    if (!direct_pos && (err= table->file->ha_index_init(0, 0)))
     {
       table->file->print_error(err, MYF(0));
       goto end;
@@ -927,7 +926,6 @@ fprintf(stderr, "Hulu1: gtid_delete_pending(%p)\n", *list_ptr);
       uchar key_buffer[4+8];
       list_element *next= cur->next;
 
-fprintf(stderr, "Hulu1:   %u-%u-%lu\n", cur->domain_id, cur->server_id, (ulong)cur->seq_no);
       if (cur->hton == hton)
       {
         int res;
@@ -941,15 +939,21 @@ fprintf(stderr, "Hulu1:   %u-%u-%lu\n", cur->domain_id, cur->server_id, (ulong)c
         else
         {
           key_copy(key_buffer, table->record[0], &table->key_info[0], 0, false);
-          res= table->file->ha_index_read_map(table->record[1], key_buffer,
+          res= table->file->ha_index_read_map(table->record[0], key_buffer,
                                               HA_WHOLE_KEY, HA_READ_KEY_EXACT);
         }
+        DBUG_EXECUTE_IF("gtid_slave_pos_simulate_failed_delete",
+              { res= 1;
+                err= ENOENT;
+                sql_print_error("<DEBUG> Error deleting old GTID row");
+              });
         if (res)
           /* We cannot find the row, assume it is already deleted. */
           ;
-        else if ((err= table->file->ha_delete_row(table->record[1])))
+        else if ((err= table->file->ha_delete_row(table->record[0])))
         {
-          table->file->print_error(err, MYF(0));
+          sql_print_error("Error deleting old GTID row: %s",
+                          thd->get_stmt_da()->message());
           /*
             In case of error, we still discard the element from the list. We do
             not want to endlessly error on the same element in case of table
