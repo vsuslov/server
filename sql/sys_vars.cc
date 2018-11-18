@@ -1952,7 +1952,7 @@ static Sys_var_uint Sys_gtid_cleanup_batch_size(
        "gtid_domain_ids. Can be decreased to reduce number of old rows in the "
        "table.",
        GLOBAL_VAR(opt_gtid_cleanup_batch_size), CMD_LINE(REQUIRED_ARG),
-       VALID_RANGE(0,2147483647), DEFAULT(100), BLOCK_SIZE(1));
+       VALID_RANGE(0,2147483647), DEFAULT(64), BLOCK_SIZE(1));
 
 
 static bool
