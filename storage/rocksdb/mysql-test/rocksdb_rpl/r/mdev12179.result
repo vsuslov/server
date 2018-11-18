@@ -135,7 +135,7 @@ SELECT COUNT(*)>=10 FROM ( SELECT * FROM mysql.gtid_slave_pos_innodb
 UNION ALL SELECT * FROM mysql.gtid_slave_pos_innodb_redundant) inner_select;
 COUNT(*)>=10
 1
-SELECT COUNT(*)>=10 FROM mysql.gtid_slave_pos_rockdb;
+SELECT COUNT(*)>=10 FROM mysql.gtid_slave_pos_rocksdb;
 COUNT(*)>=10
 1
 SET GLOBAL gtid_cleanup_batch_size = 3;
